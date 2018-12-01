@@ -21,6 +21,7 @@ The goals / steps of this project are the following:
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./output_images/extracted.png "Output"
 [image7]: ./output_images/pipeline.png "Pipeline"
+[image72]: ./output_images/pipeline2.png "Pipeline"
 [video1]: ./project_video.mp4 "Video"
 [image8]: ./output_images/fail_lines.png "Fail Lines"
 [image9]: ./output_images/fail_curves.png "Fail Lines"
@@ -148,6 +149,33 @@ The conversion factors are hardcoded as:
 ym_per_pix = 30/720 # meters per pixel in y dimension
 xm_per_pix = 3.7/np.mean(right_fitx - left_fitx) # average pixel distance between lines
 ```
+Finally, the deviation of the car from the lane center is calculated first by getting the distance of the car from each of the lines:
+
+```python
+# Compute for distance from lane to car (in meters)
+midpoint = out_img.shape[1] // 2
+left.dist_to_camera = (midpoint - left_fitx[-1]) * xm_per_pix
+right.dist_to_camera = (right_fitx[-1] - midpoint) * xm_per_pix
+```
+
+Then by subtracting the distance of the car from the left lane with the distance of the car from the right lane. Here the calculation for the deviation is done inside the `annotate()` function, which handles the annotation of each frame.
+
+```python
+def annotate(img, left, right):
+    thickness = 2
+    scale = 1.5
+    color = (255,255,255)
+    cv2.putText(img, 
+            'radius: [{:.2f}m, {:.2f}m]'.format(left.R, right.R),
+            (10,100), cv2.FONT_HERSHEY_DUPLEX, 
+            scale, color, thickness)
+    deviation = left.dist_to_camera - right.dist_to_camera
+    cv2.putText(img, 
+            'deviation: {:.2f}m'.format(deviation),
+            (10,150), cv2.FONT_HERSHEY_DUPLEX, 
+            scale, color, thickness)
+    return img
+```
 
 All in all, the line extraction step can be visualized by the image below. The green boxes represent the sliding window positions during pixel extraction. The red and blue pixels correspond to the extracted pixels for the left and right lines respectively. The blue and orange lines are the fitted lines whose radii of curvature are written on top of the image.
 
@@ -158,6 +186,7 @@ All in all, the line extraction step can be visualized by the image below. The g
 In **cell #13** of "project_notebook.ipynb", the function `generate_overlay()` creates an image showing the following features: the highlighted lane pixels, the shaded lane region, and the fitted polynomial lines. This overlay is merged with the original image using the `merge_overlay()` function in order to create the desired final output. This function performs an inverse perspective transform by using the `cv2.warpPerspective()` function with the inverse matrix `Minv` as input parameter. The entire pipeline is summarized in the series of images below.
 
 ![alt text][image7]
+![alt text][image72]
 ---
 
 ### Pipeline (video)
